@@ -4,10 +4,10 @@
       *OBJETIVO: SISTEMA DE GESTAO DE CLIENTES
       *AUTHOR: KIVIAAL
       ****************************************
-            ENVIRONMENT DIVISION.
+              ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT CLIENTES ASSIGN TO 'E:\COBOL\CLIENTES.DAT'
+           SELECT CLIENTES ASSIGN TO 'C:\COBOL2\CLIENTES.DAT'
              ORGANIZATION IS INDEXED
              ACCESS MODE IS RANDOM
              FILE STATUS IS CLIENTES-STATUS
@@ -17,18 +17,18 @@
        FD CLIENTES.
        01 CLIENTES-REG.
             05 CLIENTES-CHAVE.
-                10 CLIENTES-id PIC 9(04).
-            05 CLIENTES-NOME   PIC X(30).
-            05 CLIENTES-EMAIL  PIC X(40).
+                10 CLIENTES-FONE PIC 9(09).
+            05 CLIENTES-NOME     PIC X(30).
+            05 CLIENTES-EMAIL    PIC X(40).
 
 
 
        WORKING-STORAGE SECTION.
-       77 WRK-OPCAO  PIC X(1).
-       77 WRK-MODULO PIC X(25).
-       77 WRK-TECLA PIC X(1).
+       77 WRK-OPCAO       PIC X(1).
+       77 WRK-MODULO      PIC X(25).
+       77 WRK-TECLA       PIC X(1).
        77 CLIENTES-STATUS PIC 9(02).
-
+       77 WRK-MSGERRO     PIC X(30).
 
        SCREEN SECTION.
        01 TELA.
@@ -53,8 +53,8 @@
 
        01 TELA-REGISTRO.
             05 CHAVE FOREGROUND-COLOR 2.
-               10 LINE 10 COLUMN 10 VALUE 'ID: '.
-               10 COLUMN PLUS 2 PIC 9(04) USING CLIENTES-ID
+               10 LINE 10 COLUMN 10 VALUE 'TELEFONE '.
+               10 COLUMN PLUS 2 PIC 9(09) USING CLIENTES-FONE
                    BLANK WHEN ZEROS.
             05 SS-DADOS.
                10 LINE 11 COLUMN 10 VALUE 'NOME.... '.
@@ -62,11 +62,22 @@
                10 LINE 12 COLUMN 10 VALUE 'EMAIL... '.
                10 COLUMN PLUS 2 PIC X(40) USING CLIENTES-EMAIL.
 
+       01 MOSTRA-ERRO.
+             02 MSG-ERRO.
+               10 LINE 16 COLUMN 01 ERASE EOL
+                             BACKGROUND-COLOR 3.
+               10 LINE 16 COLUMN 10 PIC X(30)
+                             BACKGROUND-COLOR 3
+                             FROM WRK-MSGERRO.
+               10 COLUMN PLUS 2 PIC X(01)
+                             BACKGROUND-COLOR 3
+                             USING WRK-TECLA.
+
 
        PROCEDURE DIVISION.
        0001-PRINCIPAL SECTION.
-            PERFORM 1000-INICIAR.
-            PERFORM 2000-PROCESSAR.
+            PERFORM 1000-INICIAR THRU 1100-MONTATELA.
+            PERFORM 2000-PROCESSAR UNTIL WRK-OPCAO = 'X'.
             PERFORM 3000-FINALIZAR.
             STOP RUN.
 
@@ -78,16 +89,17 @@
                   OPEN I-O CLIENTES
                END-IF.
 
-
-
+       1100-MONTATELA.
             DISPLAY TELA.
             ACCEPT MENU.
+
        2000-PROCESSAR.
+             MOVE SPACES TO WRK-MSGERRO.
             EVALUATE WRK-OPCAO
               WHEN 1
                PERFORM 5000-INCLUIR
               WHEN 2
-                CONTINUE
+                PERFORM 6000-CONSULTAR
               WHEN 3
                 CONTINUE
               WHEN 4
@@ -96,10 +108,10 @@
                 CONTINUE
               WHEN OTHER
                 IF WRK-OPCAO NOT EQUAL 'X'
-                    DISPLAY 'ENTRE COM OPCAO CORRETA.'
+                    DISPLAY 'ENTRE COM OPCAO CORRETA'
                 END-IF
             END-EVALUATE.
-
+              PERFORM 1100-MONTATELA.
 
 
 
@@ -112,10 +124,24 @@
              MOVE 'MODULO - INCLUSAO ' TO WRK-MODULO.
              DISPLAY TELA.
               ACCEPT TELA-REGISTRO.
-                WRITE CLIENTES-REG.
-                IF CLIENTES-STATUS = 22
-                   DISPLAY 'REGISTRO JA EXISTE'
-                    ACCEPT WRK-OPCAO
-                  END-IF.
-                  DISPLAY TELA.
-            ACCEPT MENU.
+                WRITE CLIENTES-REG
+                 INVALID KEY
+                   MOVE 'JA EXISTE ' TO WRK-MSGERRO
+                   ACCEPT MOSTRA-ERRO
+                END-WRITE.
+
+       6000-CONSULTAR.
+
+       MOVE 'MODULO - CONSULTA ' TO WRK-MODULO.
+             DISPLAY TELA.
+                DISPLAY TELA-REGISTRO.
+                ACCEPT CHAVE.
+                 READ CLIENTES
+                INVALID KEY
+                 MOVE 'NAO ENCONTRADO ' TO WRK-MSGERRO
+                NOT INVALID KEY
+                MOVE ' -- ENCONTRADO --' TO WRK-MSGERRO
+                 DISPLAY SS-DADOS
+
+                END-READ.
+                  ACCEPT MOSTRA-ERRO.
