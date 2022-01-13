@@ -7,7 +7,7 @@
               ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
-           SELECT CLIENTES ASSIGN TO 'C:\COBOL2\CLIENTES.DAT'
+           SELECT CLIENTES ASSIGN TO 'E:\COBOL\CLIENTES.DAT'
              ORGANIZATION IS INDEXED
              ACCESS MODE IS RANDOM
              FILE STATUS IS CLIENTES-STATUS
@@ -61,7 +61,6 @@
                10 COLUMN PLUS 2 PIC X(30) USING CLIENTES-NOME.
                10 LINE 12 COLUMN 10 VALUE 'EMAIL... '.
                10 COLUMN PLUS 2 PIC X(40) USING CLIENTES-EMAIL.
-
        01 MOSTRA-ERRO.
              02 MSG-ERRO.
                10 LINE 16 COLUMN 01 ERASE EOL
@@ -94,16 +93,16 @@
             ACCEPT MENU.
 
        2000-PROCESSAR.
-             MOVE SPACES TO WRK-MSGERRO.
+            MOVE SPACES TO CLIENTES-NOME CLIENTES-EMAIL WRK-MSGERRO.
             EVALUATE WRK-OPCAO
               WHEN 1
                PERFORM 5000-INCLUIR
               WHEN 2
                 PERFORM 6000-CONSULTAR
               WHEN 3
-                CONTINUE
+                PERFORM 7000-ALTERAR
               WHEN 4
-                CONTINUE
+                PERFORM 8000-EXCLUIR
               WHEN 5
                 CONTINUE
               WHEN OTHER
@@ -131,17 +130,58 @@
                 END-WRITE.
 
        6000-CONSULTAR.
-
-       MOVE 'MODULO - CONSULTA ' TO WRK-MODULO.
+             MOVE 'MODULO - CONSULTA ' TO WRK-MODULO.
              DISPLAY TELA.
-                DISPLAY TELA-REGISTRO.
-                ACCEPT CHAVE.
-                 READ CLIENTES
-                INVALID KEY
-                 MOVE 'NAO ENCONTRADO ' TO WRK-MSGERRO
-                NOT INVALID KEY
-                MOVE ' -- ENCONTRADO --' TO WRK-MSGERRO
-                 DISPLAY SS-DADOS
+               DISPLAY TELA-REGISTRO.
+               ACCEPT CHAVE.
+                READ CLIENTES
+                  INVALID KEY
+                   MOVE 'NAO ENCONTRADO   '  TO WRK-MSGERRO
+                  NOT INVALID KEY
+                  MOVE '--  ENCONTRADO  --'  TO WRK-MSGERRO
+                   DISPLAY SS-DADOS
+                 END-READ.
+                   ACCEPT MOSTRA-ERRO.
 
+       7000-ALTERAR.
+             MOVE 'MODULO - ALTERAR ' TO WRK-MODULO.
+             DISPLAY TELA.
+             DISPLAY TELA-REGISTRO.
+              ACCEPT CHAVE.
+                READ CLIENTES
+                IF CLIENTES-STATUS = 0
+                    ACCEPT SS-DADOS
+                     REWRITE CLIENTES-REG
+                       IF CLIENTES-STATUS = 0
+                            MOVE 'REGISTRO ALTERADO ' TO WRK-MSGERRO
+                            ACCEPT MOSTRA-ERRO
+                       ELSE
+                            MOVE 'REGISTRO NAO ALTERADO' TO WRK-MSGERRO
+                            ACCEPT MOSTRA-ERRO
+                       END-IF
+                 ELSE
+                      MOVE 'REGISTRO NAO ENCONTRADO ' TO WRK-MSGERRO
+                      ACCEPT MOSTRA-ERRO
+                END-IF.
+
+
+       8000-EXCLUIR.
+             MOVE 'MODULO - EXCLUSAO ' TO WRK-MODULO.
+             DISPLAY TELA.
+               DISPLAY TELA-REGISTRO.
+               ACCEPT CHAVE.
+                READ CLIENTES
+                  INVALID KEY
+                   MOVE 'NAO ENCONTRADO   '  TO WRK-MSGERRO
+                 NOT INVALID KEY
+                  MOVE ' ENCONTRADO  (S/N) ? '  TO WRK-MSGERRO
+                   DISPLAY SS-DADOS
                 END-READ.
                   ACCEPT MOSTRA-ERRO.
+                    IF WRK-TECLA = 'S' AND CLIENTES-STATUS = 0
+                           DELETE CLIENTES
+                            INVALID KEY
+                            MOVE 'NAO EXCLUIDO ' TO WRK-MSGERRO
+                            ACCEPT  MOSTRA-ERRO
+                          END-DELETE
+                     END-IF.
